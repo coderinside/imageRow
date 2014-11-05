@@ -1,7 +1,13 @@
 \def\imageRowFileversion{0.1}
 \def\imageRowFiledate{2014/11/05}
+
 \NeedsTeXFormat{LaTeX2e}
+
 \ProvidesPackage{imageRow}[\imageRowFiledate \space v \imageRowFileversion Scale multiple images to cover a defined length at equal height]
+
+\RequirePackage{letltxmacro}
+\RequirePackage{xifthen}
+
 \makeatletter
 
 %variables, counters,....
@@ -13,45 +19,33 @@
 \newdimen\imageRow@rowLength
 \newdimen\imageRow@firstHeight
 
-%\newcommand*{\imageRow@imageList}{}
-
 %macros
-\newcommand*{\imageRow@box@getTotalHeight}[2]{\expandafter\setlength\csname#1\endcsname{\dimexpr \the\ht\csname#2\endcsname + \the\dp\csname#2\endcsname\relax}}
-\newcommand*{\imageRow@box@totalHeight}[1]{\dimexpr \the\ht\csname#1\endcsname + \the\dp\csname#1\endcsname\relax}
+\newcommand*{\imageRow@box@totalHeight}[1]{\dimexpr \the\ht#1 + \the\dp#1\relax}
 
+\newsavebox\imageRow@SaveBox
 
-%\newcommand{\imageRow@resetList}{\renewcommand*{\imageRow@imageList}{}}
 \newcommand*{\imageRow@addImage}[1]{%
-%	\ifx\imageRow@imageList\empty
-%		\def\imageRow@imageList{#1}%
-%	\else
-%		\expandafter\def\expandafter\imageRow@imageList\expandafter{\imageRow@imageList#1}%
-%	\fi
-	
-	\def\imageRow@currentSaveBox{imageRow@savebox@\alph{imageRow@rowImageCount}}
-	\def\imageRow@currentScale{imageRow@scale@Image@\theimageRow@rowCount @\alph{imageRow@rowImageCount}}
-	
-	\stepcounter{imageRow@rowImageCount}
-	\ifnum\theimageRow@rowImageCount>\theimageRow@saveboxCount
-		\stepcounter{imageRow@saveboxCount}
-		\expandafter\newsavebox\csname\imageRow@currentSaveBox\endcsname
-	\fi
-	
-	\expandafter\savebox\csname\imageRow@currentSaveBox\endcsname{#1}
-	
+	\def\imageRow@currentSaveBox{imageRow@SaveBox}%
+	\def\imageRow@currentScale{imageRow@scale@Image@\theimageRow@rowCount @\alph{imageRow@rowImageCount}}%
+	\stepcounter{imageRow@rowImageCount}%
+	%	
+	\savebox\imageRow@SaveBox{#1}%
 	\ifnum\theimageRow@rowImageCount=1
-		\setlength{\imageRow@firstHeight}{\imageRow@box@totalHeight{\imageRow@currentSaveBox}}
-		\expandafter\def\csname\imageRow@currentScale\endcsname{1.0}
+		\global\setlength{\imageRow@firstHeight}{\imageRow@box@totalHeight{\imageRow@SaveBox}}%
+		\global\imageRow@firstHeight=\imageRow@firstHeight %hack if first line does not work, see http://tex.stackexchange.com/a/119738/19326
+		\expandafter\def\csname\imageRow@currentScale\endcsname{1.0}%
 	\else
-		\expandafter\pgfmathsetmacro\csname\imageRow@currentScale\endcsname{\the\imageRow@firstHeight/\the\imageRow@box@totalHeight{\imageRow@currentSaveBox}}
+		\expandafter\pgfmathsetmacro\csname\imageRow@currentScale\endcsname{\the\imageRow@firstHeight/\the\imageRow@box@totalHeight{\imageRow@SaveBox}}%
 	\fi
-	
+	%
 %	\the\wd\csname\imageRow@currentSaveBox\endcsname
 %	\the\dimexpr \csname\imageRow@currentScale\endcsname\wd\csname\imageRow@currentSaveBox\endcsname \relax
-	\setlength{\imageRow@rowLength}{\dimexpr \imageRow@rowLength +  \csname\imageRow@currentScale\endcsname\wd\csname\imageRow@currentSaveBox\endcsname \relax}
-
+	\setlength{\imageRow@rowLength}{\dimexpr \imageRow@rowLength +  \csname\imageRow@currentScale\endcsname\wd\imageRow@SaveBox \relax}%
+	\usebox\imageRow@SaveBox%
+	\ignorespaces
 }
-\newcommand*{\imageRow@completeRow}{
+
+\newcommand{\imageRow@complete}{
 	\pgfmathsetmacro{\imageRow@rowScale}{\linewidth/\the\imageRow@rowLength}
 	
 	\count@=0
@@ -66,45 +60,42 @@
 	\repeat
 }
 
-\newcommand*{\imageRow@getBox}[1]{%
-	\count@=#1
-	\scalebox{\csname imageRow@scale@Image@\theimageRow@rowCount @\@alph\count@\endcsname}{\expandafter\usebox\csname imageRow@savebox@\@alph\count@\endcsname}%
-}
-
-\newcommand{\reset}{
-%	\imageRow@resetList
+\newcommand{\imageRow@reset}{
 	\stepcounter{imageRow@rowCount}
 	\setlength{\imageRow@rowLength}{0.0pt}
 	\setcounter{imageRow@rowImageCount}{0}
 	\setcounter{imageRow@getCount}{0}
 }
-\newcommand{\add}{\imageRow@addImage}
-\newcommand{\print}{%
-	\imageRow@completeRow
-%	\imageRow@imageList
-	\count@=0
-	\loop
-		\ifnum\the\count@ < \theimageRow@rowImageCount
-		\advance\count@\@ne
-		%
-		\imageRow@getBox{\the\count@}%
-	\repeat
-}
-\newcommand{\getBox}[1]{%
-	\imageRow@getBox{#1}%
-}
-\newcommand{\getScale}[1]{
-	\count@=#1\relax
-	\csname imageRow@scale@Image@\theimageRow@rowCount @\@alph\count@\endcsname
-}
-\newcommand{\getIt}{%
-	\stepcounter{imageRow@getCount}%
-	\expandafter\ifx\csname imageRow@scale@Image@\theimageRow@rowCount @\alph{imageRow@getCount}\endcsname\relax
+
+
+\newcommand{\addImage}{\imageRow@addImage}
+
+\newcommand{\getScale}[1][]{%
+	\ifthenelse{\isempty{#1}}{%
+		\stepcounter{imageRow@getCount}%\
+		\count@=\theimageRow@getCount\relax
+	}{
+		\count@=#1\relax
+	}%
+	%	
+	\expandafter\ifx\csname imageRow@scale@Image@\theimageRow@rowCount @\@alph\count@\endcsname\relax
 		1%
 		\PackageWarning{imageRow}{Return to get correct scaling factors.}%
 	\else
-		\csname imageRow@scale@Image@\theimageRow@rowCount @\alph{imageRow@getCount}\endcsname
+		\csname imageRow@scale@Image@\theimageRow@rowCount @\@alph\count@\endcsname\relax
 	\fi
 }
+
+\newenvironment{imageRow}{
+ \begingroup\imageRow@reset
+ \LetLtxMacro{\oldScalebox}{\scalebox}
+ \renewcommand{\scalebox}[2]{
+ 	\edef\tmpValue{##1}
+ 	\oldScalebox{\tmpValue}{##2}
+ }
+}{
+ \imageRow@complete\endgroup
+}
+
 \makeatother
 \endinput

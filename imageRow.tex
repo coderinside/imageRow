@@ -1,26 +1,30 @@
 \documentclass{article}
 
 \usepackage{pgf}
-\usepackage{stackengine}
+%\usepackage{stackengine}
 \usepackage{imageRow}
-
 
 \setlength\parindent{0pt}
 \begin{document}
-\getIt 
-\getIt
-\getIt
-\getIt
-\add{\color{blue}\rule{.5in}{.7in}}
-\add{\color{green}\rule{1in}{.2in}}
-\add{\color{red}\rule{.2in}{.5in}}
-\print
+
+\begin{imageRow}
+\getScale
+
+\getScale
+
+\getScale[1]
+\addImage{\color{yellow}\rule{.5in}{.7in}}
+%\scalebox{\getScale}{a}
+
+\addImage{\color{green}\rule{1in}{.2in}}
+\addImage{\color{red}\rule{.2in}{.5in}}
+\end{imageRow}
 
 
 \rule[1ex]{\textwidth}{.1ex}
 
 
-\getScale{1}
+%\getScale{1}
 
 %\scalebox{\getScale{1}}{\color{blue}\rule{.5in}{.7in}}
 %\scalebox{\getScale{2}}{\color{green}\rule{1in}{.2in}}
