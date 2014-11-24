@@ -25,6 +25,7 @@
 \newcommand*{\imageRow@addImage@raw}[1]{%
 	\def\imageRow@currentSaveBox{imageRow@SaveBox}%
 	\def\imageRow@currentScale{imageRow@scale@Image@\theimageRow@rowCount @\alph{imageRow@rowImageCount}}%
+	%
 	\stepcounter{imageRow@rowImageCount}%
 	%	
 	\savebox\imageRow@SaveBox{#1}%
@@ -45,6 +46,15 @@
 	\ignorespaces
 }
 
+\def\imageRow@loadCounter#1#2{%
+	\expandafter\gdef\csname #1\endcsname{#2}
+}
+
+\AtEndDocument{\def\imageRow@loadCounter#1#2{%
+	\edef\reserved@a{#2}%
+	\expandafter\ifx\csname #1\endcsname\reserved@a\else
+	\@tempswatrue\fi}}%
+
 \newcommand{\imageRow@complete}{
 	\pgfmathsetmacro{\imageRow@rowScale}{\linewidth/\the\imageRow@rowLength}
 	
@@ -56,7 +66,8 @@
 		\def\imageRow@currentScale{imageRow@scale@Image@\theimageRow@rowCount @\@alph\count@}
 		\expandafter\pgfmathsetmacro\csname\imageRow@currentScale\endcsname{\csname\imageRow@currentScale\endcsname*\imageRow@rowScale}
 		%\immediate\write\@auxout{\string\def\\\imageRow@currentScale {\csname\imageRow@currentScale\endcsname}}
-		\immediate\write\@auxout{\string\expandafter\string\gdef\string\csname\space\imageRow@currentScale\string\endcsname {\csname\imageRow@currentScale\endcsname}}
+		%\immediate\write\@auxout{\string\expandafter\string\gdef\string\csname\space\imageRow@currentScale\string\endcsname {\csname\imageRow@currentScale\endcsname}}
+		\immediate\write\@auxout{\string\imageRow@loadCounter{\imageRow@currentScale}{\csname\imageRow@currentScale\endcsname}}
 	\repeat
 }
 
